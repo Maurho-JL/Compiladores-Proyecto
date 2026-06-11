@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analizador Sub-Python — Compiladores UMG</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #1a1d27;
+    --bg3: #222636;
+    --border: #2e3350;
+    --accent: #4f8ef7;
+    --accent2: #7c3aed;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --mono: 'Courier New', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  /* HEADER */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: #fff;
+  }
+  .logo-text h1 { font-size: 16px; font-weight: 600; color: var(--text); }
+  .logo-text p { font-size: 12px; color: var(--text3); }
+  .badge {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 10px;
+    font-size: 11px; color: var(--text2);
+  }
+
+  /* MAIN LAYOUT */
+  .container { display: grid; grid-template-columns: 1fr 1fr; gap: 0; height: calc(100vh - 65px); }
+
+  /* PANEL IZQUIERDO */
+  .panel-left {
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+  }
+  .panel-header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  .editor-wrapper { position: relative; flex: 1; }
+  #line-numbers {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 44px; background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 16px 0;
+    font-family: var(--mono); font-size: 13px;
+    color: var(--text3); text-align: right;
+    overflow: hidden; user-select: none;
+    line-height: 1.6;
+  }
+  #line-numbers span { display: block; padding-right: 10px; }
+  #code-input {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    border: none; outline: none; resize: none;
+    font-family: var(--mono); font-size: 13px;
+    line-height: 1.6;
+    padding: 16px 16px 16px 60px;
+    tab-size: 4;
+  }
+  .panel-footer {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .btn-analyze {
+    background: var(--accent);
+    color: #fff; border: none; border-radius: 6px;
+    padding: 8px 20px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.2s;
+  }
+  .btn-analyze:hover { opacity: 0.85; }
+  .btn-clear {
+    background: transparent; color: var(--text2);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 16px; font-size: 13px; cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .btn-clear:hover { border-color: var(--text2); }
+  .stats { margin-left: auto; font-size: 12px; color: var(--text3); }
+
+  /* PANEL DERECHO */
+  .panel-right { display: flex; flex-direction: column; overflow: hidden; }
+
+  /* TABS */
+  .tabs {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+  }
+  .tab {
+    padding: 12px 20px; font-size: 13px; cursor: pointer;
+    color: var(--text3); border-bottom: 2px solid transparent;
+    transition: all 0.2s; user-select: none;
+  }
+  .tab:hover { color: var(--text2); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* CONTENT ÁREA */
+  .tab-content { display: none; flex: 1; overflow-y: auto; padding: 16px; }
+  .tab-content.active { display: block; }
+
+  /* TABLA DE TOKENS */
+  .section-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--text3); margin-bottom: 8px; font-weight: 600;
+  }
+  .token-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px; }
+  .token-table th {
+    background: var(--bg2); color: var(--text2);
+    padding: 8px 10px; text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600; font-size: 11px; text-transform: uppercase;
+  }
+  .token-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .token-table tr:hover td { background: var(--bg2); }
+
+  /* BADGES DE TIPO */
+  .type-badge {
+    display: inline-block; padding: 2px 7px; border-radius: 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
+  }
+  .type-KEYWORD  { background: #312e81; color: #a5b4fc; }
+  .type-NAME     { background: #14532d; color: #86efac; }
+  .type-NUMBER   { background: #713f12; color: #fcd34d; }
+  .type-STRING   { background: #7f1d1d; color: #fca5a5; }
+  .type-OP       { background: #1e3a5f; color: #93c5fd; }
+  .type-COMMENT  { background: #1c1c1c; color: #6b7280; }
+  .type-ERROR    { background: #450a0a; color: #f87171; }
+
+  /* ERRORES */
+  .error-list { margin-bottom: 20px; }
+  .error-item {
+    background: #1c0a0a; border: 1px solid #7f1d1d;
+    border-radius: 6px; padding: 10px 12px; margin-bottom: 6px;
+    font-size: 12px;
+  }
+  .error-item .err-line { color: #f87171; font-weight: 700; margin-right: 8px; }
+  .error-item .err-msg { color: var(--text2); }
+  .no-errors {
+    background: #0a1c0f; border: 1px solid #14532d;
+    border-radius: 6px; padding: 10px 12px;
+    font-size: 12px; color: #86efac;
+  }
+
+  /* TABLA DE SÍMBOLOS */
+  .symbols-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 6px; margin-bottom: 20px;
+  }
+  .symbol-item {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 10px;
+    font-family: var(--mono); font-size: 12px; color: var(--green);
+  }
+
+  /* ÁRBOL SINTÁCTICO */
+  #tree-container {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px; min-height: 300px;
+    font-family: var(--mono); font-size: 12px;
+    overflow-x: auto;
+  }
+  .tree-node { margin-left: 20px; }
+  .tree-node::before { content: '├─ '; color: var(--text3); }
+  .tree-node:last-child::before { content: '└─ '; color: var(--text3); }
+  .node-label { color: var(--accent); }
+  .node-value { color: var(--yellow); }
+  .node-type { color: var(--text3); font-size: 11px; }
+
+  /* ESTADO VACÍO */
+  .empty-state {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 200px; color: var(--text3);
+    font-size: 13px; text-align: center; gap: 8px;
+  }
+  .empty-icon { font-size: 32px; opacity: 0.4; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .container { grid-template-columns: 1fr; }
+    .panel-left { height: 40vh; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">λ</div>
+    <div class="logo-text">
+      <h1>Analizador Sub-Python</h1>
+      <p>Proyecto Compiladores — UMG Cobán</p>
+    </div>
+  </div>
+  <span class="badge">Analizador Léxico &amp; Sintáctico</span>
+</header>
+
+<div class="container">
+
+  <!-- PANEL IZQUIERDO: EDITOR -->
+  <div class="panel-left">
+    <div class="panel-header">
+      <span class="panel-title">Código fuente</span>
+    </div>
+    <div class="editor-wrapper">
+      <div id="line-numbers"><span>1</span></div>
+      <textarea id="code-input" spellcheck="false" placeholder="# Ingresa tu código Sub-Python aquí...
+def suma(a, b):
+    return a + b
+
+resultado = suma(3, 5)
+if resultado > 0:
+    print(resultado)"></textarea>
+    </div>
+    <div class="panel-footer">
+      <button class="btn-analyze" onclick="analizar()">▶ Analizar</button>
+      <button class="btn-clear" onclick="limpiar()">Limpiar</button>
+      <span class="stats" id="stats">0 líneas · 0 tokens</span>
+    </div>
+  </div>
+
+  <!-- PANEL DERECHO: RESULTADOS -->
+  <div class="panel-right">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('tokens')">Tokens</div>
+      <div class="tab" onclick="switchTab('simbolos')">Símbolos</div>
+      <div class="tab" onclick="switchTab('errores')">Errores</div>
+      <div class="tab" onclick="switchTab('arbol')">Árbol sintáctico</div>
+    </div>
+
+    <!-- TAB: TOKENS -->
+    <div class="tab-content active" id="tab-tokens">
+      <div class="section-label">Listado de tokens generados</div>
+      <div id="tokens-output">
+        <div class="empty-state">
+          <div class="empty-icon">⬡</div>
+          <span>Ingresa código y presiona Analizar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: SÍMBOLOS -->
+    <div class="tab-content" id="tab-simbolos">
+      <div class="section-label">Tabla de identificadores</div>
+      <div id="simbolos-output">
+        <div class="empty-state">
+          <div class="empty-icon">⬡</div>
+          <span>Ingresa código y presiona Analizar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: ERRORES -->
+    <div class="tab-content" id="tab-errores">
+      <div class="section-label">Control de errores léxicos</div>
+      <div id="errores-output">
+        <div class="empty-state">
+          <div class="empty-icon">⬡</div>
+          <span>Ingresa código y presiona Analizar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: ÁRBOL -->
+    <div class="tab-content" id="tab-arbol">
+      <div class="section-label">Árbol de análisis sintáctico</div>
+      <div id="tree-container">
+        <div class="empty-state">
+          <div class="empty-icon">⬡</div>
+          <span>Ingresa código y presiona Analizar</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// PALABRAS RESERVADAS
+// ─────────────────────────────────────────
+const KEYWORDS = new Set([
+  'if','elif','else','while','for','in','def','return',
+  'and','or','not','True','False','None','pass','break','continue'
+]);
+
+// ─────────────────────────────────────────
+// ANALIZADOR LÉXICO
+// ─────────────────────────────────────────
+function lexer(code) {
+  const tokens = [];
+  const errors = [];
+  const lines = code.split('\n');
+
+  lines.forEach((line, lineIdx) => {
+    const lineNum = lineIdx + 1;
+    let i = 0;
+
+    // Saltar indentación al inicio
+    while (i < line.length && (line[i] === ' ' || line[i] === '\t')) i++;
+
+    while (i < line.length) {
+      // Saltar espacios
+      if (line[i] === ' ' || line[i] === '\t') { i++; continue; }
+
+      const col = i + 1;
+      const rest = line.slice(i);
+
+      // COMENTARIO
+      if (line[i] === '#') {
+        tokens.push({ tipo: 'COMMENT', valor: line.slice(i), linea: lineNum, columna: col });
+        break;
+      }
+
+      // STRING comillas dobles o simples
+      const strMatch = rest.match(/^("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/);
+      if (strMatch) {
+        tokens.push({ tipo: 'STRING', valor: strMatch[1], linea: lineNum, columna: col });
+        i += strMatch[1].length; continue;
+      }
+
+      // FLOTANTE
+      const floatMatch = rest.match(/^(\d+\.\d*([eE][+-]?\d+)?|\.\d+([eE][+-]?\d+)?|\d+[eE][+-]?\d+)/);
+      if (floatMatch) {
+        tokens.push({ tipo: 'NUMBER', valor: floatMatch[1], linea: lineNum, columna: col });
+        i += floatMatch[1].length; continue;
+      }
+
+      // ENTERO
+      const intMatch = rest.match(/^(0|[1-9][0-9]*)/);
+      if (intMatch) {
+        tokens.push({ tipo: 'NUMBER', valor: intMatch[1], linea: lineNum, columna: col });
+        i += intMatch[1].length; continue;
+      }
+
+      // IDENTIFICADOR o KEYWORD
+      const idMatch = rest.match(/^([a-zA-Z_][a-zA-Z0-9_]*)/);
+      if (idMatch) {
+        const val = idMatch[1];
+        const tipo = KEYWORDS.has(val) ? 'KEYWORD' : 'NAME';
+        tokens.push({ tipo, valor: val, linea: lineNum, columna: col });
+        i += val.length; continue;
+      }
+
+      // OPERADORES DE COMPARACIÓN (2 chars primero)
+      const op2Match = rest.match(/^(==|!=|<=|>=|\*\*|\/\/|\+=|-=|\*=|\/=)/);
+      if (op2Match) {
+        tokens.push({ tipo: 'OP', valor: op2Match[1], linea: lineNum, columna: col });
+        i += op2Match[1].length; continue;
+      }
+
+      // OPERADORES Y DELIMITADORES 1 char
+      if ('+-*/%=<>():,'.includes(line[i])) {
+        tokens.push({ tipo: 'OP', valor: line[i], linea: lineNum, columna: col });
+        i++; continue;
+      }
+
+      // ERROR léxico
+      errors.push({ linea: lineNum, columna: col, caracter: line[i], tipo: 'Carácter no reconocido' });
+      tokens.push({ tipo: 'ERROR', valor: line[i], linea: lineNum, columna: col });
+      i++;
+    }
+  });
+
+  return { tokens, errors };
+}
+
+// ─────────────────────────────────────────
+// ÁRBOL SINTÁCTICO SIMPLE
+// ─────────────────────────────────────────
+function buildTree(tokens) {
+  const lines = {};
+  tokens.forEach(t => {
+    if (!lines[t.linea]) lines[t.linea] = [];
+    lines[t.linea].push(t);
+  });
+
+  let html = '<div style="color:var(--text2);margin-bottom:8px">programa</div>';
+
+  Object.keys(lines).forEach(lineNum => {
+    const toks = lines[lineNum].filter(t => t.tipo !== 'COMMENT');
+    if (!toks.length) return;
+
+    const first = toks[0];
+    let nodeType = 'sentencia';
+
+    if (first.tipo === 'KEYWORD') {
+      if (first.valor === 'def') nodeType = 'def_funcion';
+      else if (first.valor === 'if') nodeType = 'sentencia_if';
+      else if (first.valor === 'elif') nodeType = 'sentencia_elif';
+      else if (first.valor === 'else') nodeType = 'sentencia_else';
+      else if (first.valor === 'while') nodeType = 'sentencia_while';
+      else if (first.valor === 'for') nodeType = 'sentencia_for';
+      else if (first.valor === 'return') nodeType = 'sentencia_return';
+      else if (first.valor === 'pass') nodeType = 'sentencia_pass';
+      else if (first.valor === 'break') nodeType = 'sentencia_break';
+      else if (first.valor === 'continue') nodeType = 'sentencia_continue';
+    } else if (first.tipo === 'NAME') {
+      const hasEq = toks.find(t => t.valor === '=');
+      const hasParen = toks.find(t => t.valor === '(');
+      if (hasEq) nodeType = 'asignacion';
+      else if (hasParen) nodeType = 'llamada_funcion';
+    }
+
+    html += `<div class="tree-node" style="margin-top:4px">`;
+    html += `<span class="node-label">${nodeType}</span> `;
+    html += `<span class="node-type">[línea ${lineNum}]</span>`;
+    html += `<div style="margin-left:20px">`;
+    toks.forEach(t => {
+      html += `<div class="tree-node"><span class="node-type">${t.tipo}</span> → <span class="node-value">"${t.valor}"</span></div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  return html;
+}
+
+// ─────────────────────────────────────────
+// FUNCIÓN PRINCIPAL: ANALIZAR
+// ─────────────────────────────────────────
+function analizar() {
+  const code = document.getElementById('code-input').value;
+  if (!code.trim()) return;
+
+  const { tokens, errors } = lexer(code);
+  const lineCount = code.split('\n').length;
+
+  // Stats
+  document.getElementById('stats').textContent =
+    `${lineCount} líneas · ${tokens.length} tokens · ${errors.length} errores`;
+
+  // ── TOKENS ──
+  if (tokens.length === 0) {
+    document.getElementById('tokens-output').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">⬡</div><span>No se generaron tokens</span></div>';
+  } else {
+    let html = `<table class="token-table">
+      <thead><tr><th>#</th><th>Tipo</th><th>Valor</th><th>Línea</th><th>Columna</th></tr></thead><tbody>`;
+    tokens.forEach((t, i) => {
+      html += `<tr>
+        <td style="color:var(--text3)">${i + 1}</td>
+        <td><span class="type-badge type-${t.tipo}">${t.tipo}</span></td>
+        <td style="font-family:var(--mono)">${t.valor}</td>
+        <td>${t.linea}</td>
+        <td>${t.columna}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('tokens-output').innerHTML = html;
+  }
+
+  // ── SÍMBOLOS ──
+  const simbolos = [...new Set(tokens.filter(t => t.tipo === 'NAME').map(t => t.valor))];
+  if (simbolos.length === 0) {
+    document.getElementById('simbolos-output').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">⬡</div><span>No se encontraron identificadores</span></div>';
+  } else {
+    let html = `<div class="section-label">${simbolos.length} identificadores encontrados</div>`;
+    html += `<table class="token-table" style="margin-bottom:16px">
+      <thead><tr><th>#</th><th>Identificador</th><th>Apariciones</th></tr></thead><tbody>`;
+    simbolos.forEach((s, i) => {
+      const count = tokens.filter(t => t.tipo === 'NAME' && t.valor === s).length;
+      html += `<tr>
+        <td style="color:var(--text3)">${i + 1}</td>
+        <td style="font-family:var(--mono);color:var(--green)">${s}</td>
+        <td>${count}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('simbolos-output').innerHTML = html;
+  }
+
+  // ── ERRORES ──
+  if (errors.length === 0) {
+    document.getElementById('errores-output').innerHTML =
+      '<div class="no-errors">✓ No se encontraron errores léxicos</div>';
+  } else {
+    let html = '';
+    errors.forEach(e => {
+      html += `<div class="error-item">
+        <span class="err-line">Línea ${e.linea}, col ${e.columna}</span>
+        <span class="err-msg">${e.tipo}: "${e.caracter}"</span>
+      </div>`;
+    });
+    document.getElementById('errores-output').innerHTML = html;
+  }
+
+  // ── ÁRBOL ──
+  document.getElementById('tree-container').innerHTML = buildTree(tokens);
+}
+
+// ─────────────────────────────────────────
+// UTILIDADES
+// ─────────────────────────────────────────
+function limpiar() {
+  document.getElementById('code-input').value = '';
+  document.getElementById('stats').textContent = '0 líneas · 0 tokens';
+  ['tokens','simbolos','errores'].forEach(id => {
+    document.getElementById('tab-' + id).querySelector('div').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">⬡</div><span>Ingresa código y presiona Analizar</span></div>';
+  });
+  document.getElementById('tree-container').innerHTML =
+    '<div class="empty-state"><div class="empty-icon">⬡</div><span>Ingresa código y presiona Analizar</span></div>';
+  updateLines();
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function updateLines() {
+  const code = document.getElementById('code-input').value;
+  const lines = code.split('\n');
+  const nums = document.getElementById('line-numbers');
+  nums.innerHTML = lines.map((_, i) => `<span>${i + 1}</span>`).join('');
+}
+
+document.getElementById('code-input').addEventListener('input', updateLines);
+document.getElementById('code-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = this.selectionStart;
+    this.value = this.value.substring(0, s) + '    ' + this.value.substring(this.selectionEnd);
+    this.selectionStart = this.selectionEnd = s + 4;
+    updateLines();
+  }
+});
+
+updateLines();
+</script>
+</body>
+</html>
