@@ -558,6 +558,7 @@ main {
 }
 
 
+
 /* ═══════════════════════════════
    RESPONSIVE MÓVIL
 ═══════════════════════════════ */
@@ -569,28 +570,31 @@ main {
     height:auto;
   }
 
+  /* ── HEADER ── */
   header {
     margin:8px 8px 0;
     padding:10px 14px;
     border-radius:12px;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:8px;
   }
 
   .header-center {
     position:static;
     transform:none;
-    order:3;
     width:100%;
     display:flex;
     justify-content:center;
-    margin-top:6px;
   }
 
   .header-badge { display:none; }
-  .header-info h1 { font-size:13px; }
+  .header-info h1 { font-size:14px; }
   .header-info p  { font-size:10px; }
-  .logo-icon { width:34px; height:34px; }
+  .logo-icon { width:36px; height:36px; }
+  .btn-doc { font-size:12px; padding:6px 14px; width:100%; justify-content:center; }
 
-  /* Stats 2x2 */
+  /* ── STATS ── */
   .stats-bar {
     grid-template-columns:1fr 1fr;
     padding:8px;
@@ -600,7 +604,7 @@ main {
   .stat-label { font-size:9px; }
   .stat-icon  { font-size:16px; }
 
-  /* Main en columna, altura automática */
+  /* ── MAIN ── */
   main {
     grid-template-columns:1fr !important;
     height:auto !important;
@@ -610,19 +614,43 @@ main {
     gap:10px;
   }
 
-  /* Panel editor — altura fija razonable */
-  .panel-editor {
-    height:360px;
-    flex-shrink:0;
+  .panel-editor  { height:360px; flex-shrink:0; }
+  .panel-results { height:480px; flex-shrink:0; }
+
+  /* ── PANEL HEADER ── */
+  .panel-header {
+    flex-direction:column;
+    align-items:flex-start;
+    gap:6px;
+    padding:8px 12px;
   }
 
-  /* Panel resultados — altura automática con mínimo */
-  .panel-results {
-    height:480px;
-    flex-shrink:0;
+  .panel-title { white-space:nowrap; font-size:10px; }
+
+  .editor-actions {
+    width:100%;
+    display:flex;
+    gap:6px;
   }
 
-  /* Tabs scroll horizontal sin iconos */
+  .btn-load, .btn-clear, .btn-error {
+    flex:1;
+    justify-content:center;
+    font-size:11px;
+    padding:5px 6px;
+    text-align:center;
+  }
+
+  /* ── EDITOR ── */
+  #code-input   { font-size:12px; padding:10px 12px; }
+  #line-numbers { font-size:12px; width:36px; }
+
+  /* ── FOOTER PANEL ── */
+  .panel-footer { padding:8px 12px; gap:8px; }
+  .btn-analyze  { font-size:13px; padding:8px 16px; width:100%; justify-content:center; }
+  .stats-info   { display:none; }
+
+  /* ── TABS ── */
   .tabs {
     overflow-x:auto;
     flex-wrap:nowrap;
@@ -633,45 +661,69 @@ main {
 
   .tab {
     flex-shrink:0;
-    padding:10px 12px;
+    padding:10px 10px;
     font-size:11px;
     white-space:nowrap;
   }
   .tab .ti { display:none; }
 
-  /* Editor texto */
-  #code-input   { font-size:12px; padding:10px 12px; }
-  #line-numbers { font-size:11px; width:34px; }
-
-  /* Botones */
-  .panel-header { flex-wrap:wrap; gap:6px; padding:8px 12px; }
-  .btn-load, .btn-clear, .btn-error { font-size:11px; padding:4px 8px; }
-  .panel-footer { padding:8px 12px; }
-  .btn-analyze  { font-size:12px; padding:7px 14px; }
-  .stats-info   { font-size:10px; }
-
-  /* Tablas scroll horizontal */
-  .tokens-scroll, .simbolos-scroll, .deriv-scroll, .errores-scroll {
-    overflow-x:auto;
+  /* ── TABLAS sin scroll horizontal ── */
+  .token-table, .deriv-table {
+    min-width:unset;
+    width:100%;
   }
-  .token-table, .deriv-table { min-width:480px; }
 
-  /* Árbol */
+  .token-table th, .token-table td,
+  .deriv-table th, .deriv-table td {
+    padding:5px 6px;
+    font-size:10px;
+  }
+
+  /* Ocultar columna columna en tokens para ahorrar espacio */
+  .token-table th:last-child,
+  .token-table td:last-child { display:none; }
+
+  .tipo-badge { font-size:9px; padding:1px 5px; }
+
+  /* ── ÁRBOL ── */
   .tree-text { font-size:11px; line-height:1.6; padding:10px 12px; }
 
-  /* Derivación info */
+  /* ── DERIVACIÓN ── */
   .deriv-info-grid { grid-template-columns:1fr; gap:6px; }
   .deriv-info { padding:8px 12px; }
+  .deriv-info-val { font-size:10px; }
 
-  /* Footer */
-  .desc-footer  { padding:16px 12px; }
-  .desc-grid    { grid-template-columns:1fr; gap:10px; }
-  .desc-title   { font-size:13px; }
-  .desc-grid p  { font-size:11px; }
+  /* ── ERRORES ── */
+  .error-item { padding:8px 10px; }
+  .error-linea { font-size:11px; }
+  .error-msg   { font-size:11px; }
+
+  /* ── FOOTER ── */
+  .desc-footer { padding:14px 12px; }
+  .desc-grid   { grid-template-columns:1fr; gap:10px; }
+  .desc-title  { font-size:13px; }
+  .desc-grid p { font-size:11px; }
 }
 
 @media(max-width:400px) {
   .panel-editor  { height:300px; }
   .panel-results { height:420px; }
-  .stats-bar     { grid-template-columns:1fr 1fr; gap:6px; }
+}
+
+/* ── SCROLL HORIZONTAL SOLO EN TARJETA RESULTADOS (móvil) ── */
+@media(max-width:768px) {
+  .tokens-scroll, .simbolos-scroll,
+  .errores-scroll, .deriv-scroll {
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .token-table, .deriv-table {
+    min-width:480px;
+  }
+
+  #tree-output {
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
 }
