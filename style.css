@@ -796,3 +796,35 @@ main {
   position:static !important;
   top:auto !important;
 }
+
+/* ── FRAGMENTO DE CÓDIGO EN ERRORES ── */
+.error-fragment {
+  background:#1a0a0a;
+  border-radius:6px;
+  padding:8px 12px;
+  margin:6px 0;
+  font-family:'Courier New', monospace;
+  font-size:12px;
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+  overflow-x:auto;
+}
+
+.error-linenum {
+  color:#7A8694;
+  font-size:11px;
+  margin-bottom:2px;
+}
+
+.error-code {
+  color:#e8e4df;
+  white-space:pre;
+}
+
+.error-pointer {
+  color:#D3423D;
+  white-space:pre;
+  font-weight:700;
+  letter-spacing:0;
+}

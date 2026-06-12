@@ -584,6 +584,7 @@ function analizar() {
   const codigo = document.getElementById('code-input').value;
   if (!codigo.trim()) return;
 
+  const lineasCodigo = codigo.split('\n');
   const { tokens, errores } = analizadorLexico(codigo);
   const { arbol, erroresSint } = analizadorSintactico(tokens);
   const totalErrores = errores.length + erroresSint.length;
@@ -610,6 +611,7 @@ function analizar() {
     });
     html += '</tbody></table></div>';
     document.getElementById('tokens-output').innerHTML = html;
+    document.getElementById('tokens-output').scrollTop = 0;
   }
 
   // SÍMBOLOS
@@ -637,6 +639,7 @@ function analizar() {
     });
     html += '</tbody></table></div>';
     document.getElementById('simbolos-output').innerHTML = html;
+    document.getElementById('simbolos-output').scrollTop = 0;
   }
 
   // ERRORES
@@ -653,11 +656,24 @@ function analizar() {
     badge.textContent = `${todos.length} errores`; badge.className = 'badge badge-error';
     let html = '<div class="errores-scroll">';
     todos.forEach(e => {
-      html += `<div class="error-item">
-        <div class="error-linea">[${e.fase}] Línea ${e.linea||'?'}, col ${e.columna||'?'}</div>
-        <div class="error-msg">${e.mensaje||e.tipo}</div>
-        <div class="error-tipo">Tipo: ${e.tipo}</div>
-      </div>`;
+      const numLinea = parseInt(e.linea) || null;
+      const col = parseInt(e.columna) || 1;
+      let fragmento = '';
+      if (numLinea && lineasCodigo[numLinea - 1] !== undefined) {
+        const lineaTexto = lineasCodigo[numLinea - 1];
+        const colIdx = Math.max(0, col - 1);
+        const puntero = ' '.repeat(colIdx) + '^';
+        fragmento = '<div class="error-fragment">' +
+          '<span class="error-linenum">Línea ' + numLinea + ':</span>' +
+          '<span class="error-code">' + escHTML(lineaTexto) + '</span>' +
+          '<span class="error-pointer">' + puntero + '</span>' +
+          '</div>';
+      }
+      html += '<div class="error-item">' +
+        '<div class="error-linea">[' + e.fase + '] ' + escHTML(e.tipo) + '</div>' +
+        fragmento +
+        '<div class="error-msg">' + escHTML(e.mensaje || e.tipo) + '</div>' +
+        '</div>';
     });
     html += '</div>';
     document.getElementById('errores-output').innerHTML = html;
