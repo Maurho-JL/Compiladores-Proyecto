@@ -335,7 +335,7 @@ main {
   border-bottom:none;
   font-size:11px; font-weight:700;
   text-transform:uppercase; letter-spacing:.3px;
-  position:sticky; top:0;
+  position:static;
 }
 .token-table td, .deriv-table td {
   padding:7px 10px;
@@ -417,9 +417,10 @@ main {
 #errores-output,
 #derivacion-output {
   flex:1;
-  overflow-y:auto;
-  overflow-x:hidden;
+  overflow:hidden;
   min-height:0;
+  display:flex;
+  flex-direction:column;
 }
 
 #tokens-output.empty-state,
@@ -725,5 +726,57 @@ main {
   #tree-output {
     overflow-x:auto;
     -webkit-overflow-scrolling:touch;
+  }
+}
+
+/* ── FIX TABLA HEADER STICKY + SCROLL HORIZONTAL (móvil) ── */
+@media(max-width:768px) {
+  .token-table th, .deriv-table th {
+    position:static;
+  }
+
+  #tokens-output,
+  #simbolos-output,
+  #errores-output,
+  #derivacion-output,
+  #tree-output {
+    overflow-x:auto;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .token-table, .deriv-table {
+    min-width:460px;
+    display:table;
+  }
+}
+
+/* ── FIX HEADER TABLA Y BOTÓN DOC (móvil) ── */
+@media(max-width:768px) {
+
+  /* Encabezado tabla sin sticky */
+  .token-table th, .deriv-table th {
+    position:static !important;
+    top:auto !important;
+    z-index:auto !important;
+    background:#364651 !important;
+    box-shadow:none !important;
+  }
+
+  /* Botón documentación ajustado, no full width */
+  .btn-doc {
+    width:auto !important;
+    padding:6px 18px !important;
+    font-size:12px !important;
+  }
+}
+
+/* ── QUITAR STICKY COMPLETAMENTE EN MÓVIL ── */
+@media(max-width:768px) {
+  .token-table th, .deriv-table th {
+    position:static !important;
+    top:auto !important;
+    z-index:auto !important;
+    box-shadow:none !important;
   }
 }
