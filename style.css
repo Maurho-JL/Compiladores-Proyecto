@@ -322,7 +322,7 @@ main {
 
 /* ─── TABLAS ─── */
 .tokens-scroll, .simbolos-scroll, .errores-scroll, .deriv-scroll {
-  flex:1; overflow-y:auto; overflow-x:hidden; padding:12px 16px; min-height:0;
+  flex:1; overflow-y:auto; overflow-x:auto; padding:12px 16px; min-height:0;
 }
 
 .token-table, .deriv-table {
@@ -421,6 +421,16 @@ main {
   min-height:0;
   display:flex;
   flex-direction:column;
+}
+
+#tokens-output > div,
+#simbolos-output > div,
+#errores-output > div,
+#derivacion-output > div {
+  flex:1;
+  overflow-y:auto;
+  overflow-x:auto;
+  min-height:0;
 }
 
 #tokens-output.empty-state,
@@ -779,4 +789,10 @@ main {
     z-index:auto !important;
     box-shadow:none !important;
   }
+}
+
+/* Encabezado tabla sin sticky */
+.token-table th, .deriv-table th {
+  position:static !important;
+  top:auto !important;
 }
